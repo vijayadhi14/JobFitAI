@@ -1,6 +1,29 @@
-<<<<<<< HEAD
-# JobFitAI
-=======
-# JobFit-AI
->>>>>>> 3b95e8c585f35bb09a97b53c51ce05b3bec27c15
-NLP model that scores resumes against job descriptions
+JobFit AI
+
+JobFit AI is a smart resume scoring application that evaluates resumes against a job description (JD) and provides a professional compatibility score. The app uses NLP techniques, semantic similarity, and keyphrase analysis to help job seekers understand how well their resume matches a target role.
+
+---
+
+- Upload a Resume PDF and input a job description.
+- Computes a JobFit score (0-100) using NLP.
+- Easy to deploy via FastAPI backend + Streamlit frontend.
+
+---
+
+Project Structure
+JobFitAI/
+│
+├─ backend/
+│ ├─ main.py # FastAPI backend
+│ ├─ models/
+│ │ ├─ extractor.py # Keyphrase extraction
+│ │ ├─ scorer.py # Resume scoring logic
+│ │ └─ embedder.py # Embedding & semantic similarity
+│
+├─ frontend/
+│ └─ app.py # Streamlit frontend
+│
+├─ requirements.txt # Python dependencies
+└─ README.md
+
+---
