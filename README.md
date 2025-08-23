@@ -27,3 +27,4 @@ JobFitAI/
 └─ README.md
 
 ---
+Note : Download spacy - 3.8.7 for windows 64 - bit that is given in the repo
