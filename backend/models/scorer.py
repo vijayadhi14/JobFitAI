@@ -2,58 +2,46 @@ from typing import List, Dict
 from backend.models.embedder import Embedder
 from backend.models.extractor import KeyphraseExtractor
 
-DEFAULT_WEIGHTS = {
-    "semantic": 0.6,
-    "keyphrase": 0.3,
-    "role_alignment": 0.1
-}
-
 class JobScorer:
     def __init__(self):
         self.embedder = Embedder()
-        self.extractor = KeyphraseExtractor(embedding_model=self.embedder.model)
+        self.extractor = KeyphraseExtractor()
+        self.weights = {
+            'semantic': 0.7,
+            'keyphrase_overlap': 0.3
+        }
 
-    def keyphrase_overlap(self, jd_kp: List[str], resume_kp: List[str]) -> float:
-        set_jd = set([k.lower().strip() for k in jd_kp])
-        set_res = set([k.lower().strip() for k in resume_kp])
-        if not set_jd or not set_res:
+    def keyphrase_overlap(self, jd_keyphrases: List[str], resume_keyphrases: List[str]) -> float:
+        set_jd = set(jd_keyphrases)
+        set_resume = set(resume_keyphrases)
+        if not set_jd or not set_resume:
             return 0.0
-        return len(set_jd & set_res) / len(set_jd | set_res)
-
-    def role_alignment_score(self, resume_text: str, jd_text: str) -> float:
-        jd_kp = self.extractor.extract(jd_text)
-        resume_kp = self.extractor.extract(resume_text, top_k=30)
-        # Simple overlap
-        if not jd_kp or not resume_kp:
-            return 0.5
-        return len(set(jd_kp) & set(resume_kp)) / len(set(jd_kp))
+        intersection = set_jd.intersection(set_resume)
+        union = set_jd.union(set_resume)
+        return len(intersection) / len(union)
 
     def score_resume(self, resume_text: str, jd_text: str) -> Dict:
-        semantic = self.embedder.compute_similarity(resume_text, jd_text)
-        jd_kp = self.extractor.extract(jd_text)
-        resume_kp = self.extractor.extract(resume_text, top_k=30)
-        keyphrase_overlap_score = self.keyphrase_overlap(jd_kp, resume_kp)
-        role_score = self.role_alignment_score(resume_text, jd_text)
+        jd_keyphrases = self.extractor.extract(jd_text, topk=30)
+        resume_keyphrases = self.extractor.extract(resume_text, topk=30)
 
-        final_score = (
-            semantic * DEFAULT_WEIGHTS["semantic"] +
-            keyphrase_overlap_score * DEFAULT_WEIGHTS["keyphrase"] +
-            role_score * DEFAULT_WEIGHTS["role_alignment"]
-        )
+        semantic_score = self.embedder.compute_similarity(resume_text, jd_text)
+        kp_overlap_score = self.keyphrase_overlap(jd_keyphrases, resume_keyphrases)
 
+        final_score = ((self.weights['semantic'] * semantic_score) + (0.5 * self.weights['keyphrase_overlap'] * kp_overlap_score)) / (self.weights['semantic'] + 0.5 * self.weights['keyphrase_overlap'])
         final_score_percent = round(final_score * 100, 2)
 
-        # Professional message only
-        if final_score_percent < 30:
-            message = "Your resume needs a complete reconstruction to better match the job description."
-        elif final_score_percent <50:
-            message = "Your resume needs numerous edits to better match the job description."
-        elif final_score_percent <75:
-            message = "Your resume needs some improvements to better match the job description."
+        if final_score_percent <= 35:
+            status = "Your Resume needs complete reconstruction to better match the Job Description"
+        elif final_score_percent <= 65:
+            status = "Your Resume needs major changes to better match the Job Description"
+        elif final_score_percent <= 80:
+            status = "Your Resume Needs some key improvements to better match the Job Description"
         else:
-            message = "Your resume aligns well with the job description. You are good to go!"
+            status = "Your Resume Matches the job description you are Good to go."
 
         return {
             "final_score": final_score_percent,
-            "message": message
+            "semantic_score": round(semantic_score * 100, 2),
+            "keyphrase_overlap_score": round(kp_overlap_score * 100, 2),
+            "status": status
         }

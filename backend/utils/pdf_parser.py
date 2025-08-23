@@ -2,21 +2,17 @@ import fitz  # PyMuPDF
 import re
 
 def clean_text(text: str) -> str:
-    """
-    Normalize whitespace and remove extra newlines.
-    """
-    text = text.replace("\u00a0", " ")  # Non-breaking spaces
-    text = re.sub(r"\s+", " ", text)
-    return text.strip()
+    if not text:
+        return ""
+    text = text.replace('\u00a0', ' ')
+    text = re.sub(r'\s+', ' ', text)
+    text = text.strip()
+    return text
 
-def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """
-    Extract text from PDF bytes and clean it.
-    Returns a string.
-    """
-    doc = fitz.open(stream=file_bytes, filetype="pdf")
-    pages = []
+def extract_text_from_pdf(pdf_bytes: bytes) -> str:
+    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+    pages_text = []
     for page in doc:
-        pages.append(page.get_text("text"))
-    text = "\n".join(pages)
-    return clean_text(text)
+        pages_text.append(page.get_text("text"))
+    full_text = ''.join(pages_text)
+    return clean_text(full_text)
