@@ -1,7 +1,7 @@
 fastapi
 uvicorn
 sentence-transformers>=2.6.0
-spacy>=3.7.0
+spacy>=3.8.7
 pymupdf>=1.22.0
 requests
 streamlit
